@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "beautifulsoup4>=4.13.4",
+    "flightradarapi>=1.4.0",
     "geopy>=2.4.1",
     "streamlit>=1.46.1",
     "streamlit-js-eval>=0.1.7",
@@ -15,5 +16,5 @@ dependencies = [
     "geocoder>=1.38.1",
     "fastapi>=0.116.1",
     "uvicorn>=0.35.0",
-    "flightradarapi>=1.4.0",
+    "streamlit-geolocation>=0.0.10",
 ]

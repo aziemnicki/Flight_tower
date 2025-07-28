@@ -2,11 +2,13 @@ import streamlit as st
 from geopy.distance import geodesic
 from FlightRadar24 import FlightRadar24API
 # from streamlit_js_eval import get_geolocation
+from streamlit_geolocation import streamlit_geolocation
+from datetime import datetime
 from translations import translations
 from countryinfo import CountryInfo
 import folium
 from streamlit_folium import st_folium
-import json
+# import json
 import geocoder
 
 # --- LANGUAGE SELECTION ---
@@ -27,7 +29,7 @@ if 'user_lat' not in st.session_state:
 if 'user_lon' not in st.session_state:
     st.session_state.user_lon = 16.9452
 
-def update_location():
+def update_location_by_ip():
     """Updates the user's location using the geocoder library."""
     g = geocoder.ip('me')
     if g.ok and g.latlng:
@@ -47,6 +49,16 @@ lang_options = {"Polski": "pl", "English": "en"}
 selected_lang_display = st.sidebar.radio("Wybierz język / Select language", options=list(lang_options.keys()))
 st.session_state.lang = lang_options[selected_lang_display]
 
+with st.sidebar:
+    loc = streamlit_geolocation()          # otwiera okno zgody przeglądarki
+
+    if loc:                                # {'latitude': …, 'longitude': …, 'accuracy': …}
+        # st.write(loc)
+        st.session_state.user_lat = loc["latitude"]
+        st.session_state.user_lon = loc["longitude"]
+        st.session_state.trigger_flight_search = True
+        st.sidebar.success(get_text("location_updated").format(time=datetime.now().strftime("%H:%M:%S")))
+        # st.map({"lat": [loc["latitude"]], "lon": [loc["longitude"]]})
 
 # Initialize the FlightRadar24API
 fr_api = FlightRadar24API()
@@ -61,8 +73,8 @@ st.write(get_text("description"))
 st.sidebar.header(get_text("settings"))
 
 # --- Automatic Location ---
-if st.sidebar.button(get_text("get_my_location")):
-    update_location()
+# if st.sidebar.button(get_text("get_my_location")):
+#     update_location_by_ip()
 
 
 # Location Input
