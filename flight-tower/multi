@@ -1,0 +1,44 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
+import FlightsMap from './features/flights/components/map';
+import { FlightSummary } from './features/flights/types';
+
+function App() {
+const { t } = useTranslation();
+const [lat, setLat] = useState<number | null>(null);
+const [lon, setLon] = useState<number | null>(null);
+const [coordsReady, setCoordsReady] = useState(false);
+const [flights, setFlights] = useState<FlightSummary[]>([]);
+const [mapFocusTrigger, setMapFocusTrigger] = useState(0);
+
+const refresh = () => {
+  // Refresh logic here
+};
+
+return (
+  <div className="App">
+    <button
+      onClick={() => {
+        if (!coordsReady) {
+          toast({ title: t("errors.coords_missing"), variant: "destructive" });
+          return;
+        }
+        refresh();
+        setMapFocusTrigger((v) => v + 1);
+      }}
+    >
+      Find Flights
+    </button>
+    <FlightsMap
+      centerLat={lat ?? 0}
+      centerLon={lon ?? 0}
+      hasCenter={coordsReady}
+      flights={flights}
+      focusOnCenterTrigger={mapFocusTrigger}
+    />
+  </div>
+);
+}
+
+export default App;
