@@ -10,11 +10,12 @@ import {
 } from "@react-google-maps/api"
 
 type Props = {
-  center?: [number, number]
+  center: [number, number]
   zoom?: number
   flights?: FlightSummary[]
   selectedFlightId?: string | null
   onFlightSelect?: (flight: FlightSummary | null) => void
+  userLocation?: { lat: number; lng: number } | null
 }
 
 // Ustawienia mapy Google
@@ -33,6 +34,7 @@ export default function FlightsMap({
   flights = [],
   selectedFlightId,
   onFlightSelect,
+  userLocation,
 }: Props) {
   // Klucz API Google Maps (musisz podać własny)
   // Najlepiej przechowywać go w ENV i wstawiać przez env variables
@@ -128,10 +130,10 @@ export default function FlightsMap({
           // setCenter({ lat: newCenter.lat(), lng: newCenter.lng() });
         }}
       >
-        {/* Marker dla pozycji centralnej */}
-        {center[0] && center[1] && (
+        {/* User location marker */}
+        {userLocation && (
           <Marker
-            position={{ lat: center[0], lng: center[1] }}
+            position={userLocation}
             icon={{
               path: google.maps.SymbolPath.CIRCLE,
               scale: 8,
@@ -140,7 +142,7 @@ export default function FlightsMap({
               strokeColor: "#fff",
               strokeWeight: 2,
             }}
-            title="You are here"
+            title="Your location"
           />
         )}
 

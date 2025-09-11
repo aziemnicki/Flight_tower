@@ -9,7 +9,17 @@ import { useState } from "react"
 import { FlightDetailDrawer } from "./flight-detail-drawer"
 import { useI18n } from "@/features/flights/lib/i18n-provider"
 
-export function FlightsList({ flights = [] as FlightSummary[] }) {
+type FlightsListProps = {
+  flights?: FlightSummary[];
+  onFlightSelect?: (flight: FlightSummary) => void;
+  selectedFlightId?: string | null;
+}
+
+export function FlightsList({ 
+  flights = [], 
+  onFlightSelect,
+  selectedFlightId
+}: FlightsListProps) {
   const { t } = useI18n()
 
   const [openId, setOpenId] = useState<string | null>(null)
@@ -26,7 +36,11 @@ export function FlightsList({ flights = [] as FlightSummary[] }) {
         <ScrollArea className="h-64">
           <ul className="divide-y">
             {flights.map((f, i) => (
-              <li key={`${f.id ?? "noid"}-${i}`} className="p-3 ml-2">
+              <li 
+  key={`${f.id ?? "noid"}-${i}`} 
+  className={`p-3 ml-2 cursor-pointer hover:bg-accent/10 ${selectedFlightId === f.id ? 'bg-accent/5 border-l-4 border-primary' : ''}`}
+  onClick={() => onFlightSelect?.(f)}
+>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-medium truncate">{f.callsign ?? t('flights_list.unknown')}</div>

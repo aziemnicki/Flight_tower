@@ -41,17 +41,42 @@ const { t, locale, setLocale } = useI18n()
 const { toast } = useToast()
 const geoloc = useGeolocation()
 
-const [lat, setLat] = useState<number | null>(null)
-const [lon, setLon] = useState<number | null>(null)
-const [radius, setRadius] = useState<number>(25)
-const [limit, setLimit] = useState<number>(10)
-const [autoRefresh, setAutoRefresh] = useState<boolean>(true)
+// User's actual location (from geolocation)
+const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-const coordsReady = lat != null && lon != null
+// Map view center (can be changed by flight selection)
+const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
+
+const [radius, setRadius] = useState<number>(25);
+const [limit, setLimit] = useState<number>(10);
+const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+const [selectedFlight, setSelectedFlight] = useState<FlightSummary | null>(null);
+
+// Update map center when user location changes
+useEffect(() => {
+  if (geoloc.position?.coords) {
+    const { latitude, longitude } = geoloc.position.coords;
+    setUserLocation({ lat: latitude, lng: longitude });
+    
+    // Only update map center if we don't have a position yet
+    if (!mapCenter) {
+      setMapCenter([latitude, longitude]);
+    }
+  }
+}, [geoloc.position]);
+
+const handleFlightSelect = (flight: FlightSummary | null) => {
+  setSelectedFlight(flight);
+  if (flight?.lat && flight?.lon) {
+    setMapCenter([flight.lat, flight.lon]);
+  }
+};
+
+const coordsReady = userLocation !== null
 
 const { data, isLoading, error, refresh } = useFlights({
-  lat: lat ?? 0,
-  lon: lon ?? 0,
+  lat: userLocation?.lat ?? 0,
+  lon: userLocation?.lng ?? 0,
   radius_km: radius,
   limit,
   enabled: coordsReady,
@@ -59,10 +84,7 @@ const { data, isLoading, error, refresh } = useFlights({
 })
 
 useEffect(() => {
-  if (geoloc.position) {
-    setLat(geoloc.position.coords.latitude)
-    setLon(geoloc.position.coords.longitude)
-  }
+  // This effect is now handled by the userLocation state
 }, [geoloc.position])
 
 useEffect(() => {
@@ -132,8 +154,13 @@ return (
                 id="lat"
                 inputMode="decimal"
                 placeholder={t("latitude")}
-                value={lat ?? ""}
-                onChange={(e) => setLat(e.target.value === "" ? null : Number(e.target.value))}
+                value={userLocation?.lat ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value === "" ? null : Number(e.target.value);
+                  if (value !== null && !isNaN(value)) {
+                    setUserLocation(prev => prev ? { ...prev, lat: value } : { lat: value, lng: 0 });
+                  }
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -142,8 +169,13 @@ return (
                 id="lon"
                 inputMode="decimal"
                 placeholder={t("longitude")}
-                value={lon ?? ""}
-                onChange={(e) => setLon(e.target.value === "" ? null : Number(e.target.value))}
+                value={userLocation?.lng ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value === "" ? null : Number(e.target.value);
+                  if (value !== null && !isNaN(value)) {
+                    setUserLocation(prev => prev ? { ...prev, lng: value } : { lat: 0, lng: value });
+                  }
+                }}
               />
             </div>
           </div>
@@ -210,7 +242,11 @@ return (
       </Card>
 
       <div className="grid gap-4">
-        <FlightsList flights={flights} />
+        <FlightsList 
+          flights={flights} 
+          onFlightSelect={handleFlightSelect}
+          selectedFlightId={selectedFlight?.id}
+        />
 
         <Card className="overflow-hidden">
           <CardHeader className="py-3">
@@ -221,9 +257,12 @@ return (
           </CardHeader>
           <CardContent className="p-0">
             <FlightsMap
-              center={[lat ?? 0, lon ?? 0]}
+              center={mapCenter || [0, 0]}
+              userLocation={userLocation}
               zoom={10}
               flights={flights}
+              selectedFlightId={selectedFlight?.id}
+              onFlightSelect={handleFlightSelect}
             />
           </CardContent>
         </Card>
