@@ -30,7 +30,7 @@ const FlightsMap = dynamic(() => import("@/features/flights/components/map"), { 
 
 export default function Page() {
 return (
-  <I18nProvider defaultLocale="en">
+  <I18nProvider defaultLocale="pl">
     <HomeClient />
   </I18nProvider>
 )
@@ -83,7 +83,7 @@ return (
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radar className="h-5 w-5" />
-          <span className="font-semibold">Flight Tower</span>
+          <span className="font-semibold">{t("app.title")}</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -127,21 +127,21 @@ return (
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="lat">{t("labels.latitude")}</Label>
+              <Label htmlFor="lat">{t("latitude")}</Label>
               <Input
                 id="lat"
                 inputMode="decimal"
-                placeholder={t("placeholders.latitude")}
+                placeholder={t("latitude")}
                 value={lat ?? ""}
                 onChange={(e) => setLat(e.target.value === "" ? null : Number(e.target.value))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lon">{t("labels.longitude")}</Label>
+              <Label htmlFor="lon">{t("longitude")}</Label>
               <Input
                 id="lon"
                 inputMode="decimal"
-                placeholder={t("placeholders.longitude")}
+                placeholder={t("longitude")}
                 value={lon ?? ""}
                 onChange={(e) => setLon(e.target.value === "" ? null : Number(e.target.value))}
               />
@@ -150,7 +150,7 @@ return (
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>{t("labels.radius_km", { radius_km: radius })}</Label>
+              <Label>{t("radius_km", { radius_km: radius })}</Label>
               <span className="text-sm text-muted-foreground">{radius} km</span>
             </div>
             <Slider
@@ -163,7 +163,7 @@ return (
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="limit">{t("labels.limit")}</Label>
+            <Label htmlFor="limit">{t("limit")}</Label>
             <Input
               id="limit"
               type="number"
@@ -196,7 +196,7 @@ return (
           <Separator />
           <div className="text-sm text-muted-foreground">
             <p>
-              <strong>{t("labels.status")}:</strong>{" "}
+              <strong>{t("status")}:</strong>{" "}
               {isLoading
                 ? t("states.loading")
                 : error
@@ -221,9 +221,8 @@ return (
           </CardHeader>
           <CardContent className="p-0">
             <FlightsMap
-              centerLat={lat ?? 0}
-              centerLon={lon ?? 0}
-              hasCenter={coordsReady}
+              center={[lat ?? 0, lon ?? 0]}
+              zoom={10}
               flights={flights}
             />
           </CardContent>

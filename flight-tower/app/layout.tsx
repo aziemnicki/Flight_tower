@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Flight Tower',
+  description: 'Flight Tower',
+  generator: 'Flight Tower',
 }
 
 export default function RootLayout({
@@ -25,7 +26,16 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body className="bg-white dark:bg-gray-900/95 text-gray-900 dark:text-gray-100 transition-colors">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

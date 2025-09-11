@@ -10,10 +10,11 @@ import {
 } from "@react-google-maps/api"
 
 type Props = {
-  centerLat?: number
-  centerLon?: number
-  hasCenter?: boolean
+  center?: [number, number]
+  zoom?: number
   flights?: FlightSummary[]
+  selectedFlightId?: string | null
+  onFlightSelect?: (flight: FlightSummary | null) => void
 }
 
 // Ustawienia mapy Google
@@ -27,10 +28,11 @@ const defaultZoom = 2
 const zoomWithCenter = 6
 
 export default function FlightsMap({
-  centerLat = 0,
-  centerLon = 0,
-  hasCenter = false,
+  center = [0, 0],
+  zoom = 6,
   flights = [],
+  selectedFlightId,
+  onFlightSelect,
 }: Props) {
   // Klucz API Google Maps (musisz podać własny)
   // Najlepiej przechowywać go w ENV i wstawiać przez env variables
@@ -41,36 +43,57 @@ export default function FlightsMap({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   })
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(selectedFlightId || null)
 
-  // Pozycja i zoom mapy
-  const [center, setCenter] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 })
-  const [zoom, setZoom] = useState(defaultZoom)
+  // Map center and zoom state
+  const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>({ 
+    lat: center[0] || 0, 
+    lng: center[1] || 0
+  })
+  const [mapZoom, setMapZoom] = useState(zoom)
 
+  // Update map center when center prop changes
   useEffect(() => {
-    const lat = typeof centerLat === "number" && !isNaN(centerLat) ? centerLat : 0
-    const lng = typeof centerLon === "number" && !isNaN(centerLon) ? centerLon : 0
-    setCenter({ lat, lng })
-    setZoom(hasCenter ? zoomWithCenter : defaultZoom)
-  }, [centerLat, centerLon, hasCenter])
+    if (center[0] && center[1]) {
+      setMapCenter({
+        lat: center[0],
+        lng: center[1]
+      })
+      setMapZoom(zoom)
+    }
+  }, [center, zoom])
 
   // Filtrowanie lotów z prawidłowymi współrzędnymi
   const filteredFlights = useMemo(() => {
-    if (!flights || !Array.isArray(flights)) return []
-    return flights
-      .filter(flight =>
-        flight &&
-        typeof flight.lat === "number" &&
-        typeof flight.lon === "number" &&
-        !isNaN(flight.lat) &&
-        !isNaN(flight.lon)
-      )
-      .slice(0, 500)
+    return flights.filter(
+      (f) =>
+        f.lat &&
+        f.lon &&
+        typeof f.lat === "number" &&
+        typeof f.lon === "number" &&
+        !isNaN(f.lat) &&
+        !isNaN(f.lon)
+    )
   }, [flights])
 
-  if (!isLoaded) return <div>Ładowanie mapy...</div>;
+  // Handle flight selection
+  const handleMarkerClick = (flight: FlightSummary) => {
+    if (onFlightSelect) {
+      onFlightSelect(flight)
+    }
+    setSelectedId(flight.id)
+  }
 
-  // Teraz google jest dostępne, możesz stworzyć ikonę:
+  const handleMapClick = () => {
+    setSelectedId(null)
+    if (onFlightSelect) {
+      onFlightSelect(null)
+    }
+  }
+
+  if (!isLoaded) return <div>Loading map...</div>;
+
+  // Create plane icon for markers
   const planeIcon = {
     path: "M0 -10 L6 0 L0 4 L-6 0 Z",
     fillColor: "#111",
@@ -88,13 +111,14 @@ export default function FlightsMap({
     <div className="relative">
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={center}
+        center={{ lat: center[0], lng: center[1] }}
         zoom={zoom}
         options={{
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
         }}
+        onClick={handleMapClick}
         onZoomChanged={() => {
           // Możesz obsłużyć zoom, jeśli chcesz synchronizować stan zoomu
         }}
@@ -105,9 +129,9 @@ export default function FlightsMap({
         }}
       >
         {/* Marker dla pozycji centralnej */}
-        {hasCenter && (
+        {center[0] && center[1] && (
           <Marker
-            position={center}
+            position={{ lat: center[0], lng: center[1] }}
             icon={{
               path: google.maps.SymbolPath.CIRCLE,
               scale: 8,
@@ -140,7 +164,7 @@ export default function FlightsMap({
                 anchor: new google.maps.Point(0, 0),
                 rotation,
               }}
-              onClick={() => flight.id && setSelectedId(flight.id)}
+              onClick={() => handleMarkerClick(flight)}
               title={flight.callsign || "N/A"}
             />
           )
@@ -150,14 +174,14 @@ export default function FlightsMap({
       {/* Kontrolki zoomu */}
       <div className="absolute bottom-4 right-4 bg-white p-2 rounded shadow-md flex flex-col space-y-1">
         <button
-          onClick={() => setZoom((z) => Math.min(z + 1, 20))}
+          onClick={() => setMapZoom((z) => Math.min(z + 1, 20))}
           className="w-8 h-8 text-lg font-bold flex items-center justify-center hover:bg-gray-100 rounded"
           aria-label="Zoom in"
         >
           +
         </button>
         <button
-          onClick={() => setZoom((z) => Math.max(z - 1, 2))}
+          onClick={() => setMapZoom((z) => Math.max(z - 1, 2))}
           className="w-8 h-8 text-lg font-bold flex items-center justify-center hover:bg-gray-100 rounded"
           aria-label="Zoom out"
         >

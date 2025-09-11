@@ -5,6 +5,20 @@ build/
 dist/
 wheels/
 *.egg-info
+.env
+.env.local
+
+### NextJS ###
+# dependencies
+flight-tower/node_modules
+flight-tower/.pnp
+flight-tower/.pnp.js
+flight-tower/.next
+flight-tower/.next/*
+flight-tower/out
+
+# production
+flight-tower/build
 
 # Virtual environments
 .venv
