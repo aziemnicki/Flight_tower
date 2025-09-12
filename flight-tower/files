@@ -1,0 +1,277 @@
+// app/page.tsx
+'use client'
+
+import { useState } from "react"
+import { t } from "@/i18n"
+import { Label } from "@/components/ui/label"
+import { FlightDetailDrawer } from "@/features/flights/components/flight-detail-drawer"
+import { FlightDetail } from "@/features/flights/types"
+import { getFlightDetail } from "@/features/flights/lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Plane, Info } from 'lucide-react'
+
+export default function Page() {
+  const [radius, setRadius] = useState(25)
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [flights, setFlights] = useState<FlightDetail[]>([])
+  const [flightId, setFlightId] = useState("")
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Function to load flights based on radius
+  const loadFlights = async () => {
+    // Simulate fetching flights
+    const fetchedFlights = await fetchFlights(radius)
+    setFlights(fetchedFlights)
+  }
+
+  // Function to fetch flights (placeholder)
+  const fetchFlights = async (radius: number) => {
+    // Placeholder implementation
+    return [
+      { id: "1", airline: "Airline A", aircraft_code: "A320", route: { from: "City X", to: "City Y" }, times: { duration_readable: "2h 30m" }, origin_country: "Country X", destination_country: "Country Y" },
+      { id: "2", airline: "Airline B", aircraft_code: "B737", route: { from: "City Y", to: "City Z" }, times: { duration_readable: "3h 15m" }, origin_country: "Country Y", destination_country: "Country Z" },
+    ]
+  }
+
+  useEffect(() => {
+    loadFlights()
+    if (autoRefresh) {
+      const interval = setInterval(loadFlights, 60000) // Refresh every minute
+      return () => clearInterval(interval)
+    }
+  }, [radius, autoRefresh])
+
+  return (
+    <div className="p-4">
+      <div className="space-y-4">
+        {/* Radius Control */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>{t("labels.radius_km", { radius_km: radius })}</Label>
+            <span className="text-sm text-gray-500">{radius} km</span>
+          </div>
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={1}
+            value={radius}
+            onChange={(e) => setRadius(Number(e.target.value))}
+            className="w-full accent-gray-700"
+            aria-label={t("labels.radius_km", { radius_km: radius })}
+          />
+        </div>
+
+        {/* Auto-Refresh Control */}
+        <label className="inline-flex items-center gap-2 cursor-pointer">
+          <input
+            id="auto-refresh"
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            className="h-4 w-4"
+          />
+          <span>{t("controls.auto_refresh")}</span>
+        </label>
+
+        {/* Flights List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Plane className="h-4 w-4" /> Flights Nearby
+              <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs">
+                {flights.length}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[300px]">
+              <div className="space-y-4">
+                {flights.map((flight) => (
+                  <div key={flight.id} className="flex items-center justify-between gap-4">
+                    <div>
+                      <strong>{flight.airline}</strong> - {flight.aircraft_code}
+                    </div>
+                    <div>
+                      <strong>{flight.route.from}</strong> → <strong>{flight.route.to}</strong>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFlightId(flight.id)
+                        setDrawerOpen(true)
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                      aria-label="View Details"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Flight Detail Drawer */}
+      <FlightDetailDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        flightId={flightId}
+      />
+    </div>
+  )
+}
+
+// features/flights/components/flight-detail-drawer.tsx
+'use client'
+
+import { useEffect, useState } from "react"
+import { getFlightDetail } from "@/features/flights/lib/api"
+import type { FlightDetail } from "@/features/flights/types"
+
+export function FlightDetailDrawer({
+  open = false,
+  onOpenChange = () => {},
+  flightId = "",
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  flightId?: string
+}) {
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<FlightDetail | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      if (!open || !flightId) return
+      setLoading(true)
+      try {
+        const d = await getFlightDetail(flightId)
+        if (!cancelled) setData(d)
+      } catch {
+        if (!cancelled) setData(null)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [open, flightId])
+
+  if (!open) return null
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center"
+    >
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={() => onOpenChange(false)}
+        aria-hidden="true"
+      />
+      <div className="relative w-full sm:max-w-md bg-white dark:bg-neutral-900 rounded-t-lg sm:rounded-lg shadow-lg p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-base">Flight Details</h2>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            aria-label="Close"
+          >
+            Close
+          </button>
+        </div>
+
+        {loading && (
+          <div className="space-y-2">
+            <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-3 w-2/3 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-3 w-1/3 bg-gray-200 dark:bg-gray-800 rounded" />
+          </div>
+        )}
+
+        {!loading && data && (
+          <div className="space-y-3 text-sm">
+            <div><strong>Airline:</strong> {data.airline ?? "N/A"}</div>
+            <div><strong>Aircraft:</strong> {data.aircraft_code ?? "N/A"}</div>
+            <div><strong>Route:</strong> {data.route.from ?? "?"} → {data.route.to ?? "?"}</div>
+            <div><strong>Times:</strong> {data.times.duration_readable ?? "N/A"}</div>
+            <div><strong>Countries:</strong> {data.origin_country ?? "?"} → {data.destination_country ?? "?"}</div>
+          </div>
+        )}
+
+        {!loading && !data && (
+          <div className="text-sm text-gray-600 dark:text-gray-300">{'No details available.'}</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// features/flights/components/flights-list.tsx
+'use client'
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Plane, Info } from 'lucide-react'
+import { useState } from "react"
+import { FlightDetailDrawer } from "./flight-detail-drawer"
+import type { FlightDetail } from "@/features/flights/types"
+import { getFlightDetail } from "@/features/flights/lib/api"
+
+export function FlightsList({ flights }: { flights: FlightDetail[] }) {
+  const [flightId, setFlightId] = useState("")
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  return (
+    <div className="p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Plane className="h-4 w-4" /> Flights Nearby
+            <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs">
+              {flights.length}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[300px]">
+            <div className="space-y-4">
+              {flights.map((flight) => (
+                <div key={flight.id} className="flex items-center justify-between gap-4">
+                  <div>
+                    <strong>{flight.airline}</strong> - {flight.aircraft_code}
+                  </div>
+                  <div>
+                    <strong>{flight.route.from}</strong> → <strong>{flight.route.to}</strong>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setFlightId(flight.id)
+                      setDrawerOpen(true)
+                    }}
+                    className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                    aria-label="View Details"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Flight Detail Drawer */}
+      <FlightDetailDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        flightId={flightId}
+      />
+    </div>
+  )
+}
