@@ -3,22 +3,14 @@ from geopy.distance import geodesic
 from FlightRadar24 import FlightRadar24API
 from streamlit_js_eval import get_geolocation
 
-# from streamlit_geolocation import streamlit_geolocation
 from datetime import datetime
 from translations import translations
-from countryinfo import CountryInfo
 import folium
 from streamlit_folium import st_folium
 
-# import json
 import geocoder
 
 
-def get_country_flag(country_name):
-    try:
-        return CountryInfo(country_name).flag()
-    except (KeyError, StopIteration):
-        return "🏴‍☠️"
 
 
 def update_location_by_ip():
@@ -223,8 +215,8 @@ if st.session_state.show_results and st.session_state.flight_data:
                         except (KeyError, TypeError):
                             pass
 
-                        origin_flag = get_country_flag(origin_country)
-                        dest_flag = get_country_flag(dest_country)
+                        origin_flag = "🏴‍☠️"
+                        dest_flag = "🏴‍☠️"
 
                         flight_time_str = "N/A"
                         try:
