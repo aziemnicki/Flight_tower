@@ -2,7 +2,7 @@ import sys
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import health, flights, geo
+from backend.app.api import health, flights, geo
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -43,7 +43,7 @@ app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(flights.router, prefix="/flights", tags=["flights"])
 app.include_router(geo.router, prefix="/geo", tags=["geo"])
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
+app = app

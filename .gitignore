@@ -16,7 +16,7 @@ flight-tower/.pnp.js
 flight-tower/.next
 flight-tower/.next/*
 flight-tower/out
-
+flight-tower/.env.local
 # production
 flight-tower/build
 
