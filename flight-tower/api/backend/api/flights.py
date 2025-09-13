@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Response, HTTPException
-from app.models.schemas import SearchRequest, FlightDetail
-from app.services import flightradar
+from models.schemas import SearchRequest, FlightDetail
+from services import flightradar
 import sys
 import traceback
 

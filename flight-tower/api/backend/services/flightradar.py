@@ -2,7 +2,7 @@ from FlightRadar24 import FlightRadar24API
 from geopy.distance import geodesic
 import sys
 import traceback
-from app.utils import cache
+from utils import cache
 
 fr_api = FlightRadar24API()
 
