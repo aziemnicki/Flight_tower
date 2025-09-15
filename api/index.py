@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Importy po przeniesieniu kodu pod api/backend/...
-from backend.api import health, flights, geo
+from backend.routes import health, flights, geo
 
 app = FastAPI()
 
