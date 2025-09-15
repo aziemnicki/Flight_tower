@@ -12,7 +12,7 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "api/index.py" }
   ]
 }
