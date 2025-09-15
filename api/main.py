@@ -1,11 +1,5 @@
-import os
-import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# Add the 'api' directory to the Python path to find the 'backend' module
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'api'))
-
 from routes import health, flights, geo
 
 app = FastAPI()
