@@ -1,11 +1,7 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "flight-tower-backend"
+name = "flight-tower"
 version = "0.1.0"
-description = "Flight Tower Backend"
+description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -20,7 +16,3 @@ dependencies = [
     "fastapi>=0.116.1",
     "uvicorn>=0.35.0",
 ]
-
-[tool.setuptools.packages.find]
-where=["."]
-include=["backend*"]
