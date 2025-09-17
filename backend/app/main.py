@@ -16,9 +16,3 @@ app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(flights.router, prefix="/flights", tags=["flights"])
 app.include_router(geo.router, prefix="/geo", tags=["geo"])
 
-# Handler dla Vercel
-def handler(request):
-    return app(request)
-
-# Export app dla Vercel
-app = app
