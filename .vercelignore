@@ -1,12 +1,14 @@
 # Ignore all python files by default
 **/*.py
 
-# Un-ignore the main entrypoint
-!api/main.py
-
 # Un-ignore the python files in the api subdirectories
-!api/routes/**/*.py
-!api/services/**/*.py
-!api/utils/**/*.py
-!api/models/**/*.py
-!api/__init__.py
+!backend/api/*.py
+!backend/src/**/**.py
+!backend/uv.lock
+!backend/pyproject.toml
+!backend/.vercel.json
+
+# Node modules i cache
+node_modules/
+__pycache__/
+*.pyc
