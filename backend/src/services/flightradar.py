@@ -57,41 +57,69 @@ def get_flights(lat: float, lon: float, radius_km: int, limit: int):
     print(f"[service.get_flights] Sorted and limited to {len(limited_flights)} flights. Returning.", file=sys.stdout, flush=True)
     return limited_flights
 
+def _create_error_response(error_type: str, message: str, airline: str, aircraft_code: str) -> dict:
+    """Helper function to create consistent error responses."""
+    return {
+        "error": error_type,
+        "message": message,
+        "airline": airline,
+        "aircraft_code": aircraft_code,
+        "route": {"from": "N/A", "to": "N/A"},
+        "times": {"scheduled_departure": None, "scheduled_arrival": None, "duration_readable": "N/A"},
+        "origin_country": "N/A",
+        "destination_country": "N/A",
+    }
+
+def _fetch_flight_from_api(flight_id: str):
+    """Attempt to fetch flight data directly from the API."""
+    try:
+        flights = fr_api.get_flights(bounds=fr_api.get_bounds_by_point(lat=0, lon=0, radius=20000))
+        return next((f for f in flights if f.id == flight_id), None)
+    except Exception as e:
+        print(f"[service.get_flight_details] Error fetching flight from API: {str(e)}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        return None
+
 def get_flight_details_from_obj(flight_id: str):
     print(f"[service.get_flight_details] Getting details for flight_id: {flight_id}", file=sys.stdout, flush=True)
     
+    # Try to get flight from cache
     flight_obj = cache.get(flight_id)
+    print(f"[service.get_flight_details] Cache get for {flight_id} returned: {flight_obj is not None}", file=sys.stdout, flush=True)
     
+    # If not in cache, try to fetch from API
     if not flight_obj:
-        print(f"[service.get_flight_details] Flight object for ID {flight_id} not found in cache or expired.", file=sys.stderr, flush=True)
-        return {
-            "airline": "Flight data expired",
-            "aircraft_code": "Please perform a new search",
-            "route": {"from": "N/A", "to": "N/A"},
-            "times": {"scheduled_departure": None, "scheduled_arrival": None, "duration_readable": "N/A"},
-            "origin_country": "N/A",
-            "destination_country": "N/A",
-        }
-
-    print(f"[service.get_flight_details] Found flight object in cache for ID {flight_id}.", file=sys.stdout, flush=True)
-
+        print(f"[service.get_flight_details] Flight {flight_id} not in cache, fetching from API...", file=sys.stdout, flush=True)
+        flight_obj = _fetch_flight_from_api(flight_id)
+        
+        if not flight_obj:
+            print(f"[service.get_flight_details] Flight {flight_id} not found in API results", file=sys.stderr, flush=True)
+            return _create_error_response(
+                error_type="Flight not found",
+                message="The requested flight could not be found. Please try again or check the flight ID.",
+                airline="Flight not found",
+                aircraft_code="N/A"
+            )
+            
+        # Cache the flight object for future use
+        print(f"[service.get_flight_details] Caching flight {flight_id} for 5 minutes", file=sys.stdout, flush=True)
+        cache.set(flight_id, flight_obj, timeout=300)
+    
+    # Get flight details
     try:
-        print("[service.get_flight_details] About to call FlightRadar24API.get_flight_details with flight object...", file=sys.stdout, flush=True)
+        print("[service.get_flight_details] Fetching flight details...", file=sys.stdout, flush=True)
         flight_details = fr_api.get_flight_details(flight_obj)
-        print("[service.get_flight_details] Call to FlightRadar24API.get_flight_details finished.", file=sys.stdout, flush=True)
+        print("[service.get_flight_details] Successfully fetched flight details", file=sys.stdout, flush=True)
     except Exception as e:
-        print(f"[service.get_flight_details] An exception occurred in get_flight_details_from_obj for flight_id {flight_id}:", file=sys.stderr, flush=True)
+        error_msg = f"Failed to fetch flight details: {str(e)}"
+        print(f"[service.get_flight_details] {error_msg}", file=sys.stderr, flush=True)
         traceback.print_exc(file=sys.stderr)
-        sys.stderr.flush()
-        error_message = f"API Error: {e}"
-        return {
-            "airline": error_message,
-            "aircraft_code": "N/A",
-            "route": {"from": "N/A", "to": "N/A"},
-            "times": {"scheduled_departure": None, "scheduled_arrival": None, "duration_readable": "N/A"},
-            "origin_country": "N/A",
-            "destination_country": "N/A",
-        }
+        return _create_error_response(
+            error_type="API Error",
+            message="Failed to fetch flight details. Please try again later.",
+            airline="Data unavailable",
+            aircraft_code="N/A"
+        )
 
     if not isinstance(flight_details, dict):
         print(f"[service.get_flight_details] Details for {flight_id} is not a dict, returning default structure.", file=sys.stdout, flush=True)
