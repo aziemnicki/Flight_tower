@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import health, flights, geo
+from src.routes import health, flights, geo
 
 app = FastAPI()
 
@@ -15,3 +15,10 @@ app.add_middleware(
 app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(flights.router, prefix="/flights", tags=["flights"])
 app.include_router(geo.router, prefix="/geo", tags=["geo"])
+
+# Handler dla Vercel
+def handler(request):
+    return app(request)
+
+# Export app dla Vercel
+app = app
