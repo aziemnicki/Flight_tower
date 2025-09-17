@@ -12,7 +12,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ message: "Backend URL is not configured." }, { status: 500 });
   }
 
-  // POPRAWKA: Dodaj /api do ścieżki backendu
   const backendUrl = `${BACKEND_URL}/api/flights/${id}`
   console.log(`[api/flights/{id}] Proxying request to: ${backendUrl}`)
 
