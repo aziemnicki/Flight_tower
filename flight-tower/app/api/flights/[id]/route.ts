@@ -1,47 +1,78 @@
 import { NextResponse } from "next/server"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
+// Używaj zmiennej serwerowej dla proxy, nie publicznej
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const id = params.id
   console.log(`[api/flights/{id}] Received GET request for id: ${id}`)
 
-  if (!API_BASE) {
-    console.error("[api/flights/{id}] Backend API URL is not configured.")
-    return NextResponse.json({ message: "Backend API URL is not configured." }, { status: 500 });
+  if (!BACKEND_URL) {
+    console.error("[api/flights/{id}] Backend URL is not configured.")
+    return NextResponse.json({ message: "Backend URL is not configured." }, { status: 500 });
   }
 
-  const backendUrl = `${API_BASE}/flights/${id}`
+  // POPRAWKA: Dodaj /api do ścieżki backendu
+  const backendUrl = `${BACKEND_URL}/api/flights/${id}`
   console.log(`[api/flights/{id}] Proxying request to: ${backendUrl}`)
 
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 10000)
+    
     const res = await fetch(backendUrl, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        // Przekazuj headers z oryginalnego requestu jeśli potrzebne
+        "User-Agent": "Flight-Tower-Frontend-Proxy/1.0"
+      },
       signal: controller.signal,
+      cache: "no-store"
     })
+    
     clearTimeout(timeout)
 
     console.log(`[api/flights/{id}] Backend response status: ${res.status}`)
-    const responseText = await res.text()
-    console.log(`[api/flights/{id}] Backend raw response text:`, responseText)
-
-    if (!res.ok) {
-      console.error(`[api/flights/{id}] Backend responded with non-OK status ${res.status}. Body: ${responseText}`)
-      return NextResponse.json({ message: responseText }, { status: res.status });
-    }
     
-    const json = JSON.parse(responseText)
-    console.log("[api/flights/{id}] Successfully parsed JSON from backend, sending to client.")
-    return NextResponse.json(json)
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error(`[api/flights/{id}] Backend error ${res.status}: ${errorText}`)
+      return NextResponse.json(
+        { message: errorText || `Backend error: ${res.status}` }, 
+        { status: res.status }
+      );
+    }
+
+    const responseText = await res.text()
+    console.log(`[api/flights/{id}] Backend response length:`, responseText.length)
+
+    try {
+      const json = JSON.parse(responseText)
+      console.log("[api/flights/{id}] Successfully parsed JSON, sending to client")
+      return NextResponse.json(json)
+    } catch (parseError) {
+      console.error("[api/flights/{id}] Failed to parse backend JSON:", parseError)
+      return NextResponse.json(
+        { message: "Invalid JSON response from backend" }, 
+        { status: 502 }
+      );
+    }
 
   } catch (e: any) {
     console.error(`[api/flights/{id}] Error proxying to backend for id ${id}:`, e)
+    
     if (e.name === 'AbortError') {
       return NextResponse.json({ message: "Request to backend timed out." }, { status: 504 });
     }
-    return NextResponse.json({ message: e?.message || "Backend request failed" }, { status: 500 });
+    
+    if (e.code === 'ECONNREFUSED') {
+      return NextResponse.json({ message: "Could not connect to backend service." }, { status: 503 });
+    }
+    
+    return NextResponse.json(
+      { message: e?.message || "Backend request failed" }, 
+      { status: 500 }
+    );
   }
 }
