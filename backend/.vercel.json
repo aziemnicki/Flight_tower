@@ -1,17 +1,17 @@
 {
   "functions": {
-    "api/main.py": {
+    "app/main.py": {
       "runtime": "python3.11"
     }
   },
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/main.py"
-    },
+      "src": "/app/(.*)",
+      "dest": "/app/main.py"
+    },  
     {
       "src": "/(.*)",
-      "dest": "/api/main.py"
+      "dest": "/app/main.py"
     }
   ]
 }
