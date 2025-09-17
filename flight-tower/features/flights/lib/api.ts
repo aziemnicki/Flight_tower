@@ -36,7 +36,7 @@ export async function searchFlights(payload: {
 }
 
 export async function getFlightDetail(id: string) {
-  const url = `/api/flights/${encodeURIComponent(id)}`;
+  const url = `/api/flights/${id}`;
   console.log(`[api.ts] getFlightDetail called for id: ${id}, URL: ${url}`)
   try {
     const res = await fetch(url, {

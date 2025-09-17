@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ message: "Backend API URL is not configured." }, { status: 500 });
   }
 
-  const backendUrl = `${API_BASE}/flights/${encodeURIComponent(id)}`
+  const backendUrl = `${API_BASE}/flights/${id}`
   console.log(`[api/flights/{id}] Proxying request to: ${backendUrl}`)
 
   try {
