@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;  // Wyłącz rewalidację, aby route był zawsze dynamiczny.
 
 async function proxyToBackend(id: string) {
   console.log("[proxy] Backend API URL:", API_BASE)
@@ -15,6 +17,7 @@ async function proxyToBackend(id: string) {
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 10000)
+    console.log("[proxy] Backend URL:", backendUrl)
     const res = await fetch(backendUrl, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
