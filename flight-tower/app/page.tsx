@@ -20,7 +20,7 @@ import { useFlights } from "@/features/flights/hooks/use-flights"
 import type { FlightSummary } from "@/features/flights/types"
 import { FlightsList } from "@/features/flights/components/flights-list"
 import { FlightDetailDrawer } from "@/features/flights/components/flight-detail-drawer"
-
+import { Analytics } from "@vercel/analytics/next"
 // Dynamically import the Map to avoid SSR issues
 const FlightsMap = dynamic(() => import("@/features/flights/components/map"), { ssr: false, loading: () => (
 <div className="flex h-64 w-full items-center justify-center text-muted-foreground">
@@ -266,6 +266,7 @@ return (
             />
           </CardContent>
         </Card>
+        <Analytics />
       </div>
     </div>
   </main>
